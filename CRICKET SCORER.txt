@@ -1,0 +1,537 @@
+using System;
+using System.Collections;
+
+namespace CRICKET_APP
+{
+    internal class Program
+    {
+        public static int M_overs;
+        class Match
+        {
+            public string Host_team, Visitor_team;
+            public string Toss;
+            public string Opted;
+            private int choice;
+            public string second_bat_team;
+
+            public void Info()
+            {
+                Console.Write("HOST TEAM: ");
+                Host_team = Console.ReadLine();
+
+                Console.Write("\nVISITOR TEAM: ");
+                Visitor_team = Console.ReadLine();
+
+                Console.WriteLine("\nTOSS WON BY? \n1.HOST TEAM 2. VISITOR TEAM");
+                choice = Convert.ToInt32(Console.ReadLine());
+                Toss = (choice == 1) ? Host_team : Visitor_team;
+                second_bat_team = (choice == 1) ? Visitor_team : Host_team;
+
+                Console.WriteLine("OPTED TO? 1.BAT 2.BOWL");
+                choice = Convert.ToInt32(Console.ReadLine());
+                Opted = (choice == 1) ? "BAT" : "BOWL";
+
+                Console.WriteLine("ENTER THE NUMBER OF OVERS: ");
+                M_overs = Convert.ToInt32(Console.ReadLine());
+
+                Console.Clear();
+
+            }
+            public void Match_info_Display()
+            {
+                Console.WriteLine(Host_team + " vs " + Visitor_team);
+                Console.WriteLine("TOSS WON BY: " + Toss);
+                Console.WriteLine("OPTED TO " + Opted);
+                Console.WriteLine("overs: " + M_overs);
+
+            }
+            class Team
+            {
+                public string[] Player = new string[11];
+                public ArrayList Bowler_names = new ArrayList();  //CONTAINS ONLY THE BOWLERS WHO BOWLED
+                public ArrayList Batter_names = new ArrayList();  //CONTAINS ONLY THE BATSMAN WHO BATTED
+                public int Score, Wickets, Over, Wide, No_Balls, Byes, Leg_Byes, Balls;
+                public float CRR;
+                public float prj_score;
+                public float req_runrate;
+
+                public int Check(int current_ball, int current_ball_score, int wicket)
+                {
+                    Balls++;
+                    switch (current_ball)
+                    {
+                        case 2:
+                            Score++;
+                            Wide++;
+                            Balls--;
+                            break;
+
+                        case 3:
+                            No_Balls++;
+                            Score++;
+                            Balls--;
+                            break;
+
+                        case 4:
+                            Byes++;
+                            break;
+
+                        case 5:
+                            Leg_Byes++;
+                            break;
+
+                    }
+
+                    if (current_ball != 3 && wicket == 1)
+                        Wickets++;
+
+                    Score += current_ball_score;
+                    CRR = ((float)Score / (6 * (float)Over + (float)Balls)) * 6;
+
+                    if (Balls == 6)
+                    {
+                        Balls = 0;
+                        Over++;
+                        return 6;
+                    }
+                    prj_score = CRR * M_overs;
+                    return Balls;
+
+                }
+                public void Summary()
+                {
+                    Console.Write(Score + " - " + Wickets + "  (" + Over + "." + Balls + ")           CRR = " + CRR + "       PRJ_SCORE: " + prj_score);
+
+                }
+
+            }
+
+            class Batsman
+            {
+                public string Batter;
+                protected int B_Runs, B_Balls, B_Four, B_Six;
+                protected float B_SR;
+
+                public void Bat_runs(int runs)
+                {
+                    B_Runs += runs;
+                    B_Balls++;
+                    B_SR = ((float)B_Runs / (float)B_Balls) * 100;
+                    if (runs == 4)
+                        B_Four++;
+                    if (runs == 6)
+                        B_Six++;
+                }
+                public void Batsman_score(char strike)
+                {
+                    Console.WriteLine("\n" + Batter + strike + "\t" + B_Runs + " " + B_Balls + " " + B_Four + "  " + B_Six + "  " + B_SR);
+
+                }
+
+            }
+
+            class Bowler
+            {
+                public string Bowl_name;
+                protected int Overs, Maidens, Runs, Wicket, Balls;
+                protected float ER;
+                public void Bowler_info(int runs, int current_ball, int wicket)
+                {
+                    Runs += runs;
+                    Balls++;
+
+                    if (current_ball == 2 || current_ball == 3)
+                    {
+                        Balls--;
+                        Runs++;
+                    }
+                    if (wicket == 1 && current_ball != 3)
+                    {
+                        Wicket++;
+                    }
+
+                    if (Balls == 6)
+                    {
+                        Overs++;
+                        Balls = 0;
+                    }
+
+                    ER = ((float)Runs / ((float)Balls + 6 * (float)Overs)) * 6;
+
+                }
+                public void Bowler_info_display()
+                {
+                    Console.WriteLine("\n" + Bowl_name + "\t" + Overs + "." + Balls + " " + Maidens + " " + Runs + " " + Wicket + " " + ER);
+                }
+            }
+            class Scoring
+            {
+
+                int bt_1 = 0, bt_2 = 1, Bt_count = 2;
+                int Bt_count1 = 0, Bt_count2 = 0;
+                int Bw_count = 0; //BOWLER COUNT
+                int Bw_count1 = 0, Bw_count2 = 0;
+                int crnt_bwl = 0; //FOR CURRENT BOWLER INDEXING
+                int current_ball, current_ball_score;
+                int str_chg, Balls, wicket;
+                int turn = 1;
+                int i, tem;
+                int target;
+                int no_player;
+                Team T1 = new Team();
+                Team T2 = new Team();
+                Batsman[] BT1 = new Batsman[11];
+                Batsman[] BT2 = new Batsman[11];
+                Bowler[] BW1 = new Bowler[11];
+                Bowler[] BW2 = new Bowler[11];
+                Match M = new Match();
+                public void Match_begin()
+                {
+                    M.Info();
+                    Console.WriteLine("ENTER THE NUMBER OF PLAYERS: ");
+                    no_player = Convert.ToInt32(Console.ReadLine());
+                    //GETTING PLAYERS NAMES
+                    Console.WriteLine("ENTER THE PLAYERS OF TEAM 1: ");
+                    for (i = 0; i < no_player; i++)
+                    {
+                        T1.Player[i] = Console.ReadLine();
+                        BT1[i] = new Batsman();
+                        BW2[i] = new Bowler();
+                    }
+
+
+
+                    Console.WriteLine("ENTER THE PLAYERS OF TEAM 2: ");
+                    for (i = 0; i < no_player; i++)
+                    {
+                        T2.Player[i] = Console.ReadLine();
+                        BT2[i] = new Batsman();
+                        BW1[i] = new Bowler();
+                    }
+
+                    //DISPLAYING
+                    Console.ReadLine();
+                    Console.Clear();
+                    Console.WriteLine("\n");
+
+                    Each_ball(T1, T2, 1); //***************FIRST INNINGS********************
+
+                    Console.Clear();
+                    Bt_count1 = Bt_count;
+                    Bw_count1 = Bw_count;
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!FIRST INNIGNS OVER!!!!!!!!!!!!!");
+
+
+                    target = T1.Score + 1;
+                    T2.req_runrate = ((target - T2.Score) / (M_overs * 6 - (T2.Over * 6 + T2.Balls))) * 6;
+                    Console.WriteLine("TEAM " + M.second_bat_team + " NEEDS " + target + " RUNS TO WIN" + "  RR: " + T2.req_runrate);
+
+
+                    //*********************SECOND INNINGS************************
+                    //DECLARING
+                    bt_1 = 0;
+                    bt_2 = 1;
+                    Bt_count = 2;
+                    Bw_count = 0; //BOWLER COUNT
+                    crnt_bwl = 0; //FOR CURRENT BOWLER INDEXING
+                    turn = 1;
+
+                    Each_ball(T2, T1, 2);
+
+                    Bt_count2 = Bt_count;
+                    Bw_count2 = Bw_count;
+
+                    Console.WriteLine("\n!!!!!!!!!!MATCH OVER!!!!!!!!!");
+                    Console.WriteLine();
+
+                    if (T2.Score >= target)
+                        Console.WriteLine(M.second_bat_team + " WON BY " + (10 - T2.Wickets) + " WICKETS!!");
+                    else if (T1.Score == T2.Score)
+                        Console.WriteLine("!!!!!!!!!!!DRAW!!!!!!!!");
+                    else
+                        Console.WriteLine(M.Toss + " WON BY " + (T1.Score - T2.Score) + " RUNS!!");
+
+                    first_innings(BT1, BW1);
+                    second_innings(BT2, BW2);
+                }
+                public void Each_ball(Team t1, Team t2, int x)
+                {
+
+                    Batsman[] BT = new Batsman[11];
+                    Bowler[] BW = new Bowler[11];
+
+                    //DISPLAYING
+                    Console.WriteLine("\n");
+                    M.Match_info_Display();
+                    for (i = 0; i < no_player; i++)
+                        Console.WriteLine((i + 1) + T1.Player[i] + "\t\t" + T2.Player[i]);
+                    Console.WriteLine("\n");
+
+                    //INTIALIZATION
+                    Console.WriteLine("SELECT THE STRIKER: ");
+                    tem = Convert.ToInt32(Console.ReadLine());
+                    BT[0] = new Batsman();
+                    BT[0].Batter = t1.Player[tem];
+                    t1.Batter_names.Add(BT[0].Batter);
+
+                    Console.WriteLine("SELECT THE NON STRIKER: ");
+                    tem = Convert.ToInt32(Console.ReadLine());
+                    BT[1] = new Batsman();
+                    BT[1].Batter = t1.Player[tem];
+                    t1.Batter_names.Add(BT[1].Batter);
+
+                    Console.WriteLine("SELECT THE BOWLER: ");
+                    tem = Convert.ToInt32(Console.ReadLine());
+                    BW[crnt_bwl] = new Bowler();
+                    BW[crnt_bwl].Bowl_name = t2.Player[tem];
+                    t2.Bowler_names.Add(BW[crnt_bwl].Bowl_name);
+                    Bw_count++;
+                    Console.Clear();
+                    if (x == 1)
+                        display1(BT[bt_1], BT[bt_2], BW[crnt_bwl], t1);
+                    else
+                        display2(BT[bt_1], BT[bt_2], BW[crnt_bwl], t1);
+
+
+                    while (t1.Over < M_overs && t1.Wickets != no_player - 1 && T2.Score <= T1.Score)
+                    {
+                        Console.WriteLine("1.CRCT_BALL  2.Wide  3.NoBall  4.Byes  5.Leg_Byes");
+                        Console.WriteLine("ENTER THE OPTION: ");
+                        current_ball = Convert.ToInt32(Console.ReadLine());
+
+                        Console.WriteLine("1: WICKETET 0: NOT A WICKET");
+                        wicket = Convert.ToInt32(Console.ReadLine());
+
+                        Console.WriteLine("ENTER THE SCORE: ");
+                        current_ball_score = Convert.ToInt32(Console.ReadLine());
+
+                        Balls = t1.Check(current_ball, current_ball_score, wicket);
+                        BW[crnt_bwl].Bowler_info(current_ball_score, current_ball, wicket);
+                        if (current_ball == 1)
+                        {
+                            if (turn == 1)
+                                BT[bt_1].Bat_runs(current_ball_score);
+                            else
+                                BT[bt_2].Bat_runs(current_ball_score);
+                        }
+                        //FOR STRIKE ROTATION
+                        if (turn == 1)
+                        {
+                            if (current_ball_score % 2 == 0)
+                                turn = 1;
+                            else
+                                turn = 0;
+                        }
+                        else
+                        {
+                            if (current_ball_score % 2 == 0)
+                                turn = 0;
+                            else
+                                turn = 1;
+                        }
+
+                        //FOR WICKETES
+                        if (wicket == 1 && t1.Wickets != no_player - 1)
+                        {
+                            while (true)
+                            {
+                                for (i = 0; i < no_player; i++)
+                                    Console.WriteLine(t1.Player[i]);
+                                Console.WriteLine("SELECT THE BATSMAN FROM THE BELOW: ");
+                                tem = Convert.ToInt32(Console.ReadLine());
+
+                                if (t1.Batter_names.Contains(t1.Player[tem]))
+                                {
+                                    Console.WriteLine("ALREADY BATTED");
+                                    Console.WriteLine("CHOOSE AGAIN");
+                                }
+                                else
+                                {
+                                    t1.Batter_names.Add(t1.Player[tem]);
+                                    break;
+                                }
+                            }
+                            if (turn == 1)
+                                bt_1 = Bt_count;
+                            else
+                                bt_2 = Bt_count;
+
+                            BT[Bt_count] = new Batsman();
+                            BT[Bt_count].Batter = t1.Player[tem];
+                            Console.WriteLine("1: STRIKE CHANGE ");
+                            str_chg = Convert.ToInt32(Console.ReadLine());
+                            if (str_chg == 1)
+                                turn = 0;
+
+                            Bt_count++;
+                            Console.Clear();
+
+                        }
+
+                        //END OF THE OVER
+                        if (Balls == 6 && t1.Over != M_overs && t1.Wickets != no_player - 1)
+                        {
+                            if (turn == 1)
+                                turn = 0;
+                            else
+                                turn = 1;
+                            Balls = 0;
+                            Console.Clear();
+                            Console.WriteLine("SELECT THE BOWLER FROM THE BELOW: ");
+                            for (i = 0; i < no_player; i++)
+                                Console.WriteLine(t2.Player[i]);
+                            while (true)
+                            {
+                                tem = Convert.ToInt32(Console.ReadLine());
+                                if (t2.Player[tem] != BW[crnt_bwl].Bowl_name)
+                                {
+                                    if (t2.Bowler_names.Contains(t2.Player[tem]))
+                                    {
+                                        crnt_bwl = t2.Bowler_names.IndexOf(t2.Player[tem]);
+                                    }
+                                    else
+                                    {
+                                        crnt_bwl = Bw_count;
+                                        BW[crnt_bwl] = new Bowler();
+                                        BW[crnt_bwl].Bowl_name = t2.Player[tem];
+                                        t2.Bowler_names.Add(t2.Player[tem]);
+                                    }
+
+                                    break;
+                                }
+                                Console.Clear();
+                                Console.WriteLine("NO BOWLER CAN BOWL TWO CONSECUTINVE OVERS!!!");
+                            }
+                            Bw_count++;
+                        }
+                        if (x == 1)
+                        {
+                            Bt_count1 = Bt_count;
+                            Bw_count1 = Bw_count;
+                        }
+                        else
+                        {
+                            Bt_count2 = Bt_count;
+                            Bw_count2 = Bw_count;
+                        }
+
+                        Console.Clear();
+                        Console.Write("ENTER 1 FOR SCORE CARD OR PRESS ANY OTHER KEY: ");
+                        tem = Convert.ToInt32(Console.ReadLine());
+                        if (tem == 1 && x == 1)
+                            first_innings(BT, BW);
+                        else if (tem == 1 && x == 2)
+                            second_innings(BT, BW);
+
+                        if (x == 1)
+                            display1(BT[bt_1], BT[bt_2], BW[crnt_bwl], t1);
+                        else
+                        {
+                            t1.req_runrate = ((target - t1.Score) / (M_overs * 6 - (t1.Over * 6 + t1.Balls))) * 6;
+                            display2(BT[bt_1], BT[bt_2], BW[crnt_bwl], t1);
+
+                        }
+                    }
+
+                    if (x == 1)
+                    {
+                        BT1 = BT;
+                        BW1 = BW;
+                        T1 = t1;
+                        T2 = t2;
+                    }
+                    else
+                    {
+                        BT2 = BT;
+                        BW2 = BW;
+                        T1 = t2;
+                        T2 = t1;
+                    }
+                }
+
+                void display1(Batsman BT1, Batsman BT2, Bowler BW1, Team T)
+                {
+                    Console.Clear();
+                    Console.WriteLine("\n" + M.Toss + ",1st INNINGS \n");
+                    T.Summary();
+                    Console.WriteLine("\n\nBATSMAN\tR B 4S 6S SR");
+
+                    if (turn == 1)
+                    {
+                        BT1.Batsman_score('*');
+                        BT2.Batsman_score(' ');
+
+                    }
+                    else
+                    {
+                        BT1.Batsman_score(' ');
+                        BT2.Batsman_score('*');
+                    }
+                    Console.WriteLine("\nBOWLER\tO   M R W ECO");
+                    BW1.Bowler_info_display();
+                    Console.WriteLine("\n\n\n\n");
+                }
+
+                void display2(Batsman BT1, Batsman BT2, Bowler BW1, Team T)
+                {
+                    Console.Clear();
+                    Console.WriteLine("\n" + M.Toss + ",2nd INNINGS \n");
+                    T.Summary();
+                    Console.WriteLine("    RR = " + T.req_runrate + "\n");
+
+                    Console.WriteLine("\n\nBATSMAN\tR B 4S 6S SR");
+
+                    if (turn == 1)
+                    {
+                        BT1.Batsman_score('*');
+                        BT2.Batsman_score(' ');
+
+                    }
+                    else
+                    {
+                        BT1.Batsman_score(' ');
+                        BT2.Batsman_score('*');
+                    }
+                    Console.WriteLine("\nBOWLER\tO   M R W ECO");
+                    BW1.Bowler_info_display();
+                    if (T.Score < target)
+                        Console.WriteLine("\n" + (target - T.Score) + " RUNS IN " + (M_overs * 6 - (T.Over * 6 + T.Balls)) + "BALLS \n");
+                    Console.WriteLine("\n\n\n\n");
+                }
+                void first_innings(Batsman[] BT, Bowler[] BW)
+                {
+
+                    Console.WriteLine("\n*********FIRST INNINGS***********");
+                    Console.WriteLine("\nBATSMAN\tR B 4S 6S SR");
+                    for (i = 0; i < Bt_count1; i++)
+                        BT[i].Batsman_score(' ');
+
+                    Console.WriteLine("\nBOWLER\tO   M R W ECO");
+                    for (i = 0; i < Bw_count1; i++)
+                        BW[i].Bowler_info_display();
+                    Console.ReadLine();
+                }
+                void second_innings(Batsman[] BT, Bowler[] BW)
+                {
+                    Console.WriteLine("\n*********SECOND INNINGS***********");
+                    Console.WriteLine("\nBATSMAN\tR B 4S 6S SR");
+                    for (i = 0; i < Bt_count2; i++)
+                        BT[i].Batsman_score(' ');
+
+                    Console.WriteLine("\nBOWLER\tO   M R W ECO");
+                    for (i = 0; i < Bw_count2; i++)
+                        BW[i].Bowler_info_display();
+                    Console.ReadLine();
+
+                }
+            }
+
+            static void Main(string[] args)
+            {
+                Scoring S = new Scoring();
+                S.Match_begin();
+            }
+
+        }
+    }
+}
